@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gerenciar Animais</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+    
+    <style>
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .admin-table th, .admin-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .admin-table th { background-color: var(--primary-dark); color: white; }
+        .thumb-admin { width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid var(--lilac-bg); }
+        .btn-action { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; margin-right: 5px; }
+        .btn-delete { background-color: #ff4d4d; }
+        .btn-delete:hover { background-color: #cc0000; }
+        .btn-edit { background-color: #ffa500; }
+        .btn-edit:hover { background-color: #cc8400; }
+        .section-title-admin { color: var(--primary-dark); margin-top: 50px; border-bottom: 2px solid var(--lilac-bg); padding-bottom: 10px; }
+        .foto-item { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .btn-add-foto { background: var(--primary-light); color: white; border: none; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; margin-top: 10px; }
+        .btn-add-foto:hover { background: var(--primary-dark); }
+        .btn-remove-foto { background: #ff4d4d; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html" class="logo-container">
+            <span class="logo-text">Painel Admin</span>
+        </a>
+        <div class="menu-links">
+            <a href="adocao.html">Ver Site</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <h2 class="section-title-admin" id="titulo-form">Cadastrar Novo Animal</h2>
+        
+        <div class="filter-wrapper">
+            <input type="hidden" id="edit-id" value="">
+
+            <div class="form-group"><label>Nome:</label><input type="text" id="nome" class="filter-select" style="width:100%"></div>
+            
+            <div class="filter-container" style="margin: 20px 0;">
+                <div class="filter-group"><label>Espécie:</label><select id="tipo" class="filter-select"><option value="cao">Cachorro</option><option value="gato">Gato</option></select></div>
+                <div class="filter-group"><label>Sexo:</label><select id="sexo" class="filter-select"><option value="femea">Fêmea</option><option value="macho">Macho</option></select></div>
+                <div class="filter-group"><label>Porte:</label><select id="porte" class="filter-select"><option value="Pequeno">Pequeno</option><option value="Médio">Médio</option><option value="Grande">Grande</option></select></div>
+                <div class="filter-group"><label>Fase:</label><select id="fase" class="filter-select"><option value="filhote">Filhote</option><option value="adulto">Adulto</option><option value="idoso">Idoso</option></select></div>
+            </div>
+
+            <div class="form-group"><label>Data de Nascimento:</label><input type="date" id="dataNascimento" class="filter-select" style="width:100%"></div>
+            
+            <div style="background: #f0f0f0; padding: 15px; border-radius: 10px; margin-top: 20px;">
+                <h4 style="color: var(--primary-dark); margin-bottom: 10px;">Fotos do Animal</h4>
+                <div id="container-fotos"></div>
+                <button onclick="adicionarCampoFoto()" class="btn-add-foto"><i class="fas fa-plus"></i> Adicionar outra foto</button>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;"><label>Características:</label><input type="text" id="caracteristicas" class="filter-select" style="width:100%"></div>
+            <div class="form-group"><label>História:</label><textarea id="historia" class="filter-select" style="width:100%" rows="3"></textarea></div>
+            <div class="form-group"><label>Adaptação:</label><textarea id="adaptacao" class="filter-select" style="width:100%" rows="2"></textarea></div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="processarCadastro()" class="btn-cta" id="btn-salvar" style="margin-top:20px;">SALVAR ANIMAL</button>
+                <button onclick="cancelarEdicao()" class="btn-cta" id="btn-cancelar" style="margin-top:20px; background-color: #666; display: none;">CANCELAR</button>
+            </div>
+        </div>
+
+        <h2 class="section-title-admin">Animais Cadastrados</h2>
+        <div class="filter-wrapper" style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Foto</th><th>Nome</th><th>Espécie</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="lista-admin"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            carregarListaAdmin();
+            adicionarCampoFoto(true); 
+        });
+
+        function adicionarCampoFoto(isPrincipal = false) {
+            const container = document.getElementById('container-fotos');
+            const div = document.createElement('div');
+            div.className = 'foto-item';
+            
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.className = 'filter-select';
+            input.accept = 'image/*';
+            input.style.flex = '1';
+            
+            if(isPrincipal) {
+                input.id = 'foto-principal';
+                div.innerHTML = '<strong>Capa:</strong> ';
+                div.appendChild(input);
+            } else {
+                div.appendChild(input);
+                const btnRemove = document.createElement('button');
+                btnRemove.className = 'btn-remove-foto';
+                btnRemove.innerHTML = '<i class="fas fa-times"></i>';
+                btnRemove.onclick = function() { div.remove(); };
+                div.appendChild(btnRemove);
+            }
+            container.appendChild(div);
+        }
+
+        function processarCadastro() {
+            const idEdicao = document.getElementById('edit-id').value;
+            const nome = document.getElementById('nome').value;
+            const nasc = document.getElementById('dataNascimento').value;
+            
+            if(!nome || !nasc) { alert("Preencha Nome e Data de Nascimento!"); return; }
+
+            const inputsFotos = document.querySelectorAll('#container-fotos input[type="file"]');
+            const promessasDeLeitura = [];
+
+            inputsFotos.forEach(input => {
+                if (input.files.length > 0) {
+                    promessasDeLeitura.push(lerArquivo(input.files[0]));
+                } else {
+                    promessasDeLeitura.push(Promise.resolve(null)); 
+                }
+            });
+
+            Promise.all(promessasDeLeitura).then(novasFotos => {
+                // Filtra fotos válidas
+                let fotosParaSalvar = novasFotos.filter(f => f !== null);
+
+                if (idEdicao) {
+                    const animais = carregarAnimais();
+                    const index = animais.findIndex(a => a.id == idEdicao);
+                    
+                    if(index !== -1) {
+                        // Se não subiu novas, mantém as antigas
+                        if(fotosParaSalvar.length === 0) {
+                            fotosParaSalvar = animais[index].fotos;
+                        }
+
+                        animais[index] = {
+                            ...animais[index],
+                            nome: nome,
+                            tipo: document.getElementById('tipo').value,
+                            sexo: document.getElementById('sexo').value,
+                            porte: document.getElementById('porte').value,
+                            fase: document.getElementById('fase').value,
+                            nasc: nasc,
+                            caracteristicas: document.getElementById('caracteristicas').value,
+                            historia: document.getElementById('historia').value,
+                            adaptacao: document.getElementById('adaptacao').value,
+                            fotos: fotosParaSalvar
+                        };
+                        
+                        localStorage.setItem('animaisAdocao', JSON.stringify(animais));
+                        alert("Animal atualizado!");
+                        resetarFormulario();
+                    }
+                } else {
+                    if(fotosParaSalvar.length === 0) {
+                        alert("Anexe pelo menos a foto principal!");
+                        return;
+                    }
+                    const novoAnimal = {
+                        id: Date.now(),
+                        nome: nome,
+                        tipo: document.getElementById('tipo').value,
+                        sexo: document.getElementById('sexo').value,
+                        porte: document.getElementById('porte').value,
+                        fase: document.getElementById('fase').value,
+                        nasc: nasc,
+                        caracteristicas: document.getElementById('caracteristicas').value,
+                        historia: document.getElementById('historia').value,
+                        adaptacao: document.getElementById('adaptacao').value,
+                        fotos: fotosParaSalvar
+                    };
+                    salvarAnimal(novoAnimal);
+                    resetarFormulario();
+                }
+                carregarListaAdmin();
+            });
+        }
+
+        function lerArquivo(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function carregarListaAdmin() {
+            const animais = carregarAnimais();
+            const tabela = document.getElementById('lista-admin');
+            tabela.innerHTML = "";
+
+            if (animais.length === 0) {
+                tabela.innerHTML = "<tr><td colspan='4'>Nenhum animal cadastrado.</td></tr>";
+                return;
+            }
+
+            animais.slice().reverse().forEach(animal => {
+                const row = `
+                    <tr>
+                        <td><img src="${animal.fotos[0]}" class="thumb-admin"></td>
+                        <td><strong>${animal.nome}</strong></td>
+                        <td>${animal.tipo === 'cao' ? 'Cachorro' : 'Gato'}</td>
+                        <td>
+                            <button class="btn-action btn-edit" onclick="prepararEdicao(${animal.id})"><i class="fas fa-pen"></i></button>
+                            <button class="btn-action btn-delete" onclick="deletarAnimal(${animal.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tabela.innerHTML += row;
+            });
+        }
+
+        function prepararEdicao(id) {
+            const animais = carregarAnimais();
+            const animal = animais.find(a => a.id == id);
+            
+            if(animal) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                document.getElementById('titulo-form').innerText = "Editando: " + animal.nome;
+                document.getElementById('btn-salvar').innerText = "ATUALIZAR ANIMAL";
+                document.getElementById('btn-cancelar').style.display = "inline-block";
+                document.getElementById('edit-id').value = animal.id;
+
+                document.getElementById('nome').value = animal.nome;
+                document.getElementById('tipo').value = animal.tipo;
+                document.getElementById('sexo').value = animal.sexo;
+                document.getElementById('porte').value = animal.porte;
+                document.getElementById('fase').value = animal.fase;
+                document.getElementById('dataNascimento').value = animal.nasc;
+                document.getElementById('caracteristicas').value = animal.caracteristicas || "";
+                document.getElementById('historia').value = animal.historia || "";
+                document.getElementById('adaptacao').value = animal.adaptacao || "";
+
+                document.getElementById('container-fotos').innerHTML = "";
+                adicionarCampoFoto(true);
+            }
+        }
+
+        function cancelarEdicao() { resetarFormulario(); }
+
+        function resetarFormulario() {
+            document.getElementById('edit-id').value = "";
+            document.getElementById('titulo-form').innerText = "Cadastrar Novo Animal";
+            document.getElementById('btn-salvar').innerText = "SALVAR ANIMAL";
+            document.getElementById('btn-cancelar').style.display = "none";
+            const inputs = document.querySelectorAll('.filter-wrapper input, .filter-wrapper textarea, .filter-wrapper select');
+            inputs.forEach(i => i.value = "");
+            document.getElementById('tipo').value = "cao";
+            document.getElementById('sexo').value = "femea";
+            document.getElementById('container-fotos').innerHTML = "";
+            adicionarCampoFoto(true);
+        }
+    </script>
+</body>
+</html>

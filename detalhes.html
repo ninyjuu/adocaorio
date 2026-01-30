@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes - Adoção Rio</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html" class="logo-container">
+            <span class="logo-text">Adoção Rio</span>
+        </a>
+        <div class="menu-links"><a href="adocao.html">Voltar</a></div>
+    </nav>
+
+    <div class="container">
+        <div class="btn-back-container">
+            <a href="adocao.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+
+        <div class="detail-wrapper" id="conteudo-detalhe">
+            <p>Carregando...</p>
+        </div>
+    </div>
+
+    <script>
+        const idBicho = pegarParametroUrl('id');
+        const animais = carregarAnimais();
+        const animal = animais.find(a => a.id == idBicho);
+
+        if (animal) {
+            const idade = calcularIdade(animal.nasc);
+            const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
+            const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
+
+            // 1. GERAR SLIDES DINAMICAMENTE
+            // Só cria tags <img> para as fotos que existem
+            let slidesHtml = '';
+            if (animal.fotos && animal.fotos.length > 0) {
+                animal.fotos.forEach((foto, index) => {
+                    // A primeira foto ganha a classe 'active'
+                    const activeClass = index === 0 ? 'active' : '';
+                    slidesHtml += `<img src="${foto}" class="slide ${activeClass}">`;
+                });
+            } else {
+                // Se não tiver foto nenhuma, põe uma padrão
+                slidesHtml = `<img src="https://via.placeholder.com/400x300?text=Sem+Foto" class="slide active">`;
+            }
+
+            // 2. GERAR SETAS APENAS SE TIVER MAIS DE 1 FOTO
+            let setasHtml = '';
+            if (animal.fotos && animal.fotos.length > 1) {
+                setasHtml = `
+                    <button class="slide-nav-btn prev" onclick="mudarSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <button class="slide-nav-btn next" onclick="mudarSlide(1)"><i class="fas fa-chevron-right"></i></button>
+                `;
+            }
+
+            const html = `
+                <div class="detail-img-container">
+                    ${setasHtml}
+                    ${slidesHtml}
+                </div>
+
+                <div class="detail-content">
+                    <h2 class="detail-title">${animal.nome} <i class="fas fa-${iconClass}" style="color: ${iconColor}; font-size: 2rem;"></i></h2>
+                    
+                    <div class="detail-tags">
+                        <span class="tag">${animal.sexo === 'femea' ? 'Fêmea' : 'Macho'}</span>
+                        <span class="tag">${animal.porte} Porte</span>
+                        <span class="tag">${animal.fase}</span>
+                    </div>
+
+                    <div class="detail-text">
+                        <p><strong>Idade:</strong> ${idade}</p>
+                        <p><strong>História:</strong> ${animal.historia}</p>
+                        <p><strong>Características:</strong> ${animal.caracteristicas || ''}</p>
+                        <p><strong>Adaptação:</strong> ${animal.adaptacao || ''}</p>
+                    </div>
+
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScTHLwKREyuSfOQt47-NwpBidDZ_cCaHgBuq_qxMx7W_UJ89A/viewform" target="_blank" class="btn-cta">
+                        Adote ${animal.nome}
+                    </a>
+                </div>
+            `;
+            document.getElementById('conteudo-detalhe').innerHTML = html;
+        } else {
+            document.getElementById('conteudo-detalhe').innerHTML = "<h2>Animal não encontrado :(</h2>";
+        }
+
+        // Script do Slide
+        let slideIndex = 0;
+        function mudarSlide(n) {
+            const slides = document.querySelectorAll(".slide");
+            if (slides.length <= 1) return; // Se só tem 1 slide, não faz nada
+
+            // Remove classe active
+            slides[slideIndex].classList.remove("active");
+            
+            // Calcula novo índice
+            slideIndex += n;
+            if (slideIndex >= slides.length) slideIndex = 0;
+            if (slideIndex < 0) slideIndex = slides.length - 1;
+            
+            // Adiciona classe active
+            slides[slideIndex].classList.add("active");
+        }
+    </script>
+
+</body>
+</html>
