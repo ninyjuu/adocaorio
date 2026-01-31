@@ -7,9 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="script.js"></script>
+
     <style>
         .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .admin-table th, .admin-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -56,7 +58,7 @@
 
             <div style="display: flex; gap: 10px;">
                 <button onclick="processarCadastro()" class="btn-cta" id="btn-salvar" style="margin-top:20px;">SALVAR ANIMAL</button>
-                <button onclick="cancelarEdicao()" class="btn-cta" id="btn-cancelar" style="margin-top:20px; background-color: #666; display: none;">CANCELAR</button>
+                <button onclick="resetarFormulario()" class="btn-cta" id="btn-cancelar" style="margin-top:20px; background-color: #666; display: none;">CANCELAR</button>
             </div>
         </div>
 
@@ -70,7 +72,13 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => { carregarListaAdmin(); adicionarCampoFoto(true); });
+        let animaisCache = [];
+
+        document.addEventListener("DOMContentLoaded", () => { 
+            carregarListaAdmin(); 
+            adicionarCampoFoto(true); 
+        });
+
         function adicionarCampoFoto(isPrincipal=false) {
             const container = document.getElementById('container-fotos');
             const div = document.createElement('div');
@@ -81,59 +89,94 @@
             else { div.appendChild(input); const btn = document.createElement('button'); btn.className = 'btn-remove-foto'; btn.innerHTML = '<i class="fas fa-times"></i>'; btn.onclick = function(){div.remove()}; div.appendChild(btn); }
             container.appendChild(div);
         }
-        function processarCadastro() {
+
+        async function processarCadastro() {
             const idEdicao = document.getElementById('edit-id').value;
             const nome = document.getElementById('nome').value;
             const nasc = document.getElementById('dataNascimento').value;
+
             if(!nome || !nasc) { alert("Preencha Nome e Data!"); return; }
+
             const inputs = document.querySelectorAll('#container-fotos input[type="file"]');
-            const proms = [];
-            inputs.forEach(i => i.files.length > 0 ? proms.push(lerArquivo(i.files[0])) : proms.push(Promise.resolve(null)));
-            
-            Promise.all(proms).then(novasFotos => {
-                let fotosParaSalvar = novasFotos.filter(f => f !== null);
-                if(idEdicao) {
-                    const animais = carregarAnimais();
-                    const index = animais.findIndex(a => a.id == idEdicao);
-                    if(index !== -1) {
-                        if(fotosParaSalvar.length === 0) fotosParaSalvar = animais[index].fotos;
-                        animais[index] = { ...animais[index], nome, tipo: document.getElementById('tipo').value, sexo: document.getElementById('sexo').value, porte: document.getElementById('porte').value, fase: document.getElementById('fase').value, nasc, caracteristicas: document.getElementById('caracteristicas').value, historia: document.getElementById('historia').value, adaptacao: document.getElementById('adaptacao').value, fotos: fotosParaSalvar };
-                        localStorage.setItem('animaisAdocao', JSON.stringify(animais));
-                        alert("Atualizado!"); resetarFormulario();
-                    }
-                } else {
-                    if(fotosParaSalvar.length === 0) { alert("Anexe a capa!"); return; }
-                    const novo = { id: Date.now(), nome, tipo: document.getElementById('tipo').value, sexo: document.getElementById('sexo').value, porte: document.getElementById('porte').value, fase: document.getElementById('fase').value, nasc, caracteristicas: document.getElementById('caracteristicas').value, historia: document.getElementById('historia').value, adaptacao: document.getElementById('adaptacao').value, fotos: fotosParaSalvar };
-                    salvarAnimal(novo); resetarFormulario();
-                }
-                carregarListaAdmin();
+            const fotosPromessas = Array.from(inputs).map(i => i.files[0] ? lerArquivo(i.files[0]) : null);
+            const novasFotos = (await Promise.all(fotosPromessas)).filter(f => f !== null);
+
+            let fotosParaSalvar;
+            if (idEdicao) {
+                const animalExistente = animaisCache.find(a => a.idFirebase == idEdicao);
+                fotosParaSalvar = novasFotos.length > 0 ? novasFotos : animalExistente.fotos;
+            } else {
+                if(novasFotos.length === 0) { alert("Anexe ao menos a capa!"); return; }
+                fotosParaSalvar = novasFotos;
+            }
+
+            const animalData = {
+                nome,
+                tipo: document.getElementById('tipo').value,
+                sexo: document.getElementById('sexo').value,
+                porte: document.getElementById('porte').value,
+                fase: document.getElementById('fase').value,
+                nasc,
+                caracteristicas: document.getElementById('caracteristicas').value,
+                historia: document.getElementById('historia').value,
+                adaptacao: document.getElementById('adaptacao').value,
+                fotos: fotosParaSalvar
+            };
+
+            if(idEdicao) animalData.idFirebase = idEdicao;
+
+            salvarAnimalNoBanco(animalData).then(() => {
+                resetarFormulario();
             });
         }
-        function lerArquivo(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+
         function carregarListaAdmin() {
-            const animais = carregarAnimais(); const tb = document.getElementById('lista-admin'); tb.innerHTML = "";
-            if(animais.length === 0) { tb.innerHTML = "<tr><td colspan='4'>Vazio.</td></tr>"; return; }
-            animais.slice().reverse().forEach(a => {
-                tb.innerHTML += `<tr><td><img src="${a.fotos[0]}" class="thumb-admin"></td><td><strong>${a.nome}</strong></td><td>${a.tipo}</td><td><button class="btn-action btn-edit" onclick="prepararEdicao(${a.id})"><i class="fas fa-pen"></i></button><button class="btn-action btn-delete" onclick="deletarAnimal(${a.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+            buscarAnimais((lista) => {
+                animaisCache = lista;
+                const tb = document.getElementById('lista-admin');
+                tb.innerHTML = "";
+                if(lista.length === 0) { tb.innerHTML = "<tr><td colspan='4'>Vazio.</td></tr>"; return; }
+                lista.forEach(a => {
+                    const foto = (a.fotos && a.fotos[0]) ? a.fotos[0] : 'https://via.placeholder.com/50';
+                    tb.innerHTML += `<tr><td><img src="${foto}" class="thumb-admin"></td><td><strong>${a.nome}</strong></td><td>${a.tipo}</td><td><button class="btn-action btn-edit" onclick="prepararEdicao('${a.idFirebase}')"><i class="fas fa-pen"></i></button><button class="btn-action btn-delete" onclick="deletarAnimalDoBanco('${a.idFirebase}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                });
             });
         }
-        function prepararEdicao(id) {
-            const a = carregarAnimais().find(x => x.id == id);
+
+        function prepararEdicao(idFirebase) {
+            const a = animaisCache.find(x => x.idFirebase == idFirebase);
             if(a) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 document.getElementById('titulo-form').innerText = "Editando: " + a.nome;
                 document.getElementById('btn-salvar').innerText = "ATUALIZAR";
                 document.getElementById('btn-cancelar').style.display = "inline-block";
-                document.getElementById('edit-id').value = a.id;
-                document.getElementById('nome').value = a.nome; document.getElementById('tipo').value = a.tipo; document.getElementById('sexo').value = a.sexo; document.getElementById('porte').value = a.porte; document.getElementById('fase').value = a.fase; document.getElementById('dataNascimento').value = a.nasc; document.getElementById('caracteristicas').value = a.caracteristicas||""; document.getElementById('historia').value = a.historia||""; document.getElementById('adaptacao').value = a.adaptacao||"";
-                document.getElementById('container-fotos').innerHTML = ""; adicionarCampoFoto(true);
+                document.getElementById('edit-id').value = a.idFirebase;
+                document.getElementById('nome').value = a.nome;
+                document.getElementById('tipo').value = a.tipo;
+                document.getElementById('sexo').value = a.sexo;
+                document.getElementById('porte').value = a.porte;
+                document.getElementById('fase').value = a.fase;
+                document.getElementById('dataNascimento').value = a.nasc;
+                document.getElementById('caracteristicas').value = a.caracteristicas || "";
+                document.getElementById('historia').value = a.historia || "";
+                document.getElementById('adaptacao').value = a.adaptacao || "";
+                document.getElementById('container-fotos').innerHTML = "";
+                adicionarCampoFoto(true);
             }
         }
-        function cancelarEdicao() { resetarFormulario(); }
+
         function resetarFormulario() {
-            document.getElementById('edit-id').value = ""; document.getElementById('titulo-form').innerText = "Cadastrar Novo Animal"; document.getElementById('btn-salvar').innerText = "SALVAR ANIMAL"; document.getElementById('btn-cancelar').style.display = "none";
-            document.querySelectorAll('.filter-wrapper input, .filter-wrapper textarea').forEach(i => i.value = "");
-            document.getElementById('container-fotos').innerHTML = ""; adicionarCampoFoto(true);
+            document.getElementById('edit-id').value = "";
+            document.getElementById('titulo-form').innerText = "Cadastrar Novo Animal";
+            document.getElementById('btn-salvar').innerText = "SALVAR ANIMAL";
+            document.getElementById('btn-cancelar').style.display = "none";
+            document.getElementById('nome').value = "";
+            document.getElementById('dataNascimento').value = "";
+            document.getElementById('caracteristicas').value = "";
+            document.getElementById('historia').value = "";
+            document.getElementById('adaptacao').value = "";
+            document.getElementById('container-fotos').innerHTML = "";
+            adicionarCampoFoto(true);
         }
     </script>
 </body>

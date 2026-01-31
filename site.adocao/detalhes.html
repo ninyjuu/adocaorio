@@ -7,9 +7,68 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="script.js"></script>
+
+    <style>
+        /* CSS EXTRA PARA FORÇAR O LAYOUT LADO A LADO */
+        .detail-wrapper {
+            display: flex !important;
+            flex-direction: row !important; /* Força ficar lado a lado */
+            align-items: flex-start !important;
+            gap: 40px !important;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .detail-img-container {
+            flex: 1 !important; /* Ocupa exatamente a metade esquerda */
+            width: 50%;
+            height: 500px;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #eee;
+        }
+
+        .detail-content {
+            flex: 1 !important; /* Ocupa exatamente a metade direita */
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ajusta a foto sem esticar */
+            display: none;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        /* Ajuste para celular: volta a ficar um em cima do outro */
+        @media (max-width: 900px) {
+            .detail-wrapper {
+                flex-direction: column !important;
+                padding: 20px;
+            }
+            .detail-img-container, .detail-content {
+                width: 100% !important;
+                height: auto;
+            }
+            .detail-img-container { height: 350px; }
+        }
+    </style>
 </head>
 <body>
 
@@ -27,110 +86,89 @@
         </div>
 
         <div class="detail-wrapper" id="conteudo-detalhe">
-            <p>Carregando...</p>
+            <p style="text-align: center; width: 100%;">Carregando amiguinho...</p>
         </div>
     </div>
 
     <script>
-        const idBicho = pegarParametroUrl('id');
-        const animais = carregarAnimais();
-        const animal = animais.find(a => a.id == idBicho);
+        document.addEventListener("DOMContentLoaded", () => {
+            const idBicho = pegarParametroUrl('id');
+            if (!idBicho) return;
 
-        if (animal) {
-            const idade = calcularIdade(animal.nasc);
+            buscarAnimais((animais) => {
+                const animal = animais.find(a => a.idFirebase == idBicho);
+                if (animal) renderizar(animal);
+            });
+        });
+
+        function renderizar(animal) {
             const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
             const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
-            
-            // FORMATAÇÃO DO SUBTÍTULO COM |
-            const sexoTexto = animal.sexo === 'femea' ? 'Fêmea' : 'Macho';
-            const porteTexto = animal.porte ? animal.porte + ' Porte' : '';
-            const faseTexto = animal.fase ? animal.fase : '';
-            // Junta tudo com a barra |
-            const subtitulo = [sexoTexto, porteTexto, faseTexto].filter(Boolean).join(" | ");
+            const subtitulo = [
+                animal.sexo === 'femea' ? 'Fêmea' : 'Macho', 
+                animal.porte + ' Porte', 
+                animal.fase
+            ].filter(Boolean).join(" | ");
 
-            // MONTA O TEXTO APENAS SE EXISTIR
-            let detalhesTextoHTML = `<p><strong>Idade:</strong> ${idade}</p>`;
-            
-            if (animal.caracteristicas && animal.caracteristicas.trim() !== "") {
-                detalhesTextoHTML += `<p><strong>Características:</strong> ${animal.caracteristicas}</p>`;
-            }
-            if (animal.historia && animal.historia.trim() !== "") {
-                detalhesTextoHTML += `<p><strong>História:</strong> ${animal.historia}</p>`;
-            }
-            if (animal.adaptacao && animal.adaptacao.trim() !== "") {
-                detalhesTextoHTML += `<p><strong>Adaptação:</strong> ${animal.adaptacao}</p>`;
-            }
+            let slides = animal.fotos.map((f, i) => 
+                `<img src="${f}" class="slide ${i===0?'active':''}">`
+            ).join('');
 
-            // SLIDES E SETAS
-            let slidesHtml = '';
-            if (animal.fotos && animal.fotos.length > 0) {
-                animal.fotos.forEach((foto, index) => {
-                    const activeClass = index === 0 ? 'active' : '';
-                    slidesHtml += `<img src="${foto}" class="slide ${activeClass}">`;
-                });
-            } else {
-                slidesHtml = `<img src="https://via.placeholder.com/400x300?text=Sem+Foto" class="slide active">`;
-            }
+            let setas = animal.fotos.length > 1 ? `
+                <button class="slide-nav-btn prev" onclick="mudarSlide(-1)" style="position:absolute;left:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                <button class="slide-nav-btn next" onclick="mudarSlide(1)" style="position:absolute;right:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+            ` : '';
 
-            let setasHtml = '';
-            if (animal.fotos && animal.fotos.length > 1) {
-                setasHtml = `
-                    <button class="slide-nav-btn prev" onclick="mudarSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <button class="slide-nav-btn next" onclick="mudarSlide(1)"><i class="fas fa-chevron-right"></i></button>
-                `;
-            }
+            // Dentro da função renderizar(animal) no seu detalhes.html
+// Substitua a parte do link de adoção por esta estrutura:
 
-            const html = `
+            document.getElementById('conteudo-detalhe').innerHTML = `
                 <div class="detail-img-container">
-                    ${setasHtml}
-                    ${slidesHtml}
+                    ${setas}
+                    ${slides}
                 </div>
-
                 <div class="detail-content">
-                    <h2 class="detail-title">${animal.nome} <i class="fas fa-${iconClass}" style="color: ${iconColor}; font-size: 2rem;"></i></h2>
-                    
-                    <div class="info-subtitulo">${subtitulo}</div>
-
-                    <div class="detail-text">
-                        ${detalhesTextoHTML}
+                    <h2 style="font-size: 3.5rem; color: var(--primary-dark); margin:0;">
+                        ${animal.nome} <i class="fas fa-${iconClass}" style="color: ${iconColor};"></i>
+                    </h2>
+                    <div style="font-weight:700; color:var(--primary-dark); margin: 10px 0 20px 0; font-size: 1.2rem;">
+                        ${subtitulo}
+                    </div>
+                    <div style="font-size: 1.1rem; line-height: 1.6; color: #444; flex-grow: 1;">
+                        <p><strong>Idade:</strong> ${calcularIdade(animal.nasc)}</p>
+                        ${animal.caracteristicas ? `<p><strong>Características:</strong> ${animal.caracteristicas}</p>` : ''}
+                        ${animal.historia ? `<p><strong>História:</strong> ${animal.historia}</p>` : ''}
+                        ${animal.adaptacao ? `<p><strong>Adaptação:</strong> ${animal.adaptacao}</p>` : ''}
                     </div>
 
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScTHLwKREyuSfOQt47-NwpBidDZ_cCaHgBuq_qxMx7W_UJ89A/viewform" target="_blank" class="btn-cta">
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScTHLwKREyuSfOQt47-NwpBidDZ_cCaHgBuq_qxMx7W_UJ89A/viewform" 
+                    target="_blank" 
+                    class="btn-cta" 
+                    style="margin-top:30px; text-decoration:none; text-align:center; display: flex; justify-content: center;">
                         Adote ${animal.nome}
                     </a>
                 </div>
             `;
-            document.getElementById('conteudo-detalhe').innerHTML = html;
-        } else {
-            document.getElementById('conteudo-detalhe').innerHTML = "<h2>Animal não encontrado :(</h2>";
         }
 
         let slideIndex = 0;
         function mudarSlide(n) {
-            const slides = document.querySelectorAll(".slide");
-            if (slides.length <= 1) return;
-            slides[slideIndex].classList.remove("active");
-            slideIndex += n;
-            if (slideIndex >= slides.length) slideIndex = 0;
-            if (slideIndex < 0) slideIndex = slides.length - 1;
-            slides[slideIndex].classList.add("active");
+            const s = document.querySelectorAll(".slide");
+            if (s.length <= 1) return;
+            s[slideIndex].classList.remove("active");
+            slideIndex = (slideIndex + n + s.length) % s.length;
+            s[slideIndex].classList.add("active");
         }
     </script>
 
     <footer>
         <div class="wave-top"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path></svg></div>
-        
         <div class="footer-container">
             <div class="footer-section">
                 <h3>Entre em contato</h3>
-                <div class="contact-item">
-                    <i class="fab fa-instagram"></i> adocaorio
-                </div>
-                <div class="contact-item">
-                    <i class="fas fa-envelope"></i> adocaorio@gmail.com
-                </div>
+                <div class="contact-item"><i class="fab fa-instagram"></i> adocaorio</div>
+                <div class="contact-item"><i class="fas fa-envelope"></i> adocaorio@gmail.com</div>
             </div>
-
             <div class="footer-section">
                 <h3>Como ajudar</h3>
                 <p>Doe para arcarmos com os cuidados dos abrigados!</p>
@@ -138,6 +176,5 @@
             </div>
         </div>
     </footer>
-
 </body>
 </html>

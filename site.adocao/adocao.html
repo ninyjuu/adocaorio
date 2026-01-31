@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="script.js"></script>
@@ -38,76 +39,65 @@
             </div>
         </div>
 
-        <div class="animal-grid" id="grid-animais"></div>
-
-        <div class="pagination">
-            <a href="#" class="page-btn active">1</a>
-            <a href="#" class="page-btn">2</a>
-            <a href="#" class="page-btn">3</a>
-            <a href="#" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+        <div class="animal-grid" id="grid-animais">
+            <p style='text-align:center; width:100%; color:#666;'>Carregando animais...</p>
         </div>
     </div>
 
     <script>
-        const listaAnimais = carregarAnimais();
-
         function renderizar() {
             const grid = document.getElementById('grid-animais');
-            grid.innerHTML = "";
+            
+            buscarAnimais((lista) => {
+                grid.innerHTML = "";
+                const fTipo = document.getElementById('f-tipo').value;
+                const fSexo = document.getElementById('f-sexo').value;
+                const fPorte = document.getElementById('f-porte').value;
+                const fFase = document.getElementById('f-fase').value;
 
-            const fTipo = document.getElementById('f-tipo').value;
-            const fSexo = document.getElementById('f-sexo').value;
-            const fPorte = document.getElementById('f-porte').value;
-            const fFase = document.getElementById('f-fase').value;
+                lista.forEach(animal => {
+                    if(fTipo !== 'todos' && animal.tipo !== fTipo) return;
+                    if(fSexo !== 'todos' && animal.sexo !== fSexo) return;
+                    if(fPorte !== 'todos' && animal.porte !== fPorte) return;
+                    if(fFase !== 'todos' && animal.fase !== fFase) return;
 
-            listaAnimais.forEach(animal => {
-                if(fTipo !== 'todos' && animal.tipo !== fTipo) return;
-                if(fSexo !== 'todos' && animal.sexo !== fSexo) return;
-                if(fPorte !== 'todos' && animal.porte !== fPorte) return;
-                if(fFase !== 'todos' && animal.fase !== fFase) return;
+                    const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
+                    const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
+                    const foto = (animal.fotos && animal.fotos[0]) ? animal.fotos[0] : 'https://via.placeholder.com/400x300';
 
-                const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
-                const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
-                const idadeTexto = calcularIdade(animal.nasc);
+                    grid.innerHTML += `
+                        <div class="animal-card">
+                            <div class="card-header">
+                                <span class="name-tag">${animal.nome}</span>
+                                <i class="fas fa-${iconClass}" style="color: ${iconColor}; font-size: 1.5rem;"></i>
+                            </div>
+                            <img src="${foto}" class="animal-img-whole">
+                            <div class="animal-info">
+                                <p><strong>Idade:</strong> ${calcularIdade(animal.nasc)}</p>
+                                <p><strong>Porte:</strong> ${animal.porte}</p>
+                            </div>
+                            <a href="detalhes.html?id=${animal.idFirebase}" class="btn-details">Ver Detalhes</a>
+                        </div>`;
+                });
 
-                const cardHTML = `
-                    <div class="animal-card">
-                        <div class="card-header">
-                            <span class="name-tag">${animal.nome}</span>
-                            <i class="fas fa-${iconClass}" style="color: ${iconColor}; font-size: 1.5rem;"></i>
-                        </div>
-                        <img src="${animal.fotos[0]}" class="animal-img-whole">
-                        <div class="animal-info">
-                            <p><strong>Idade:</strong> ${idadeTexto}</p>
-                            <p><strong>Porte:</strong> ${animal.porte}</p>
-                        </div>
-                        <a href="detalhes.html?id=${animal.id}" class="btn-details">Ver Detalhes</a>
-                    </div>
-                `;
-                grid.innerHTML += cardHTML;
+                if(grid.innerHTML === "") {
+                    grid.innerHTML = "<p style='text-align:center; width:100%; color:#666;'>Nenhum animal encontrado com esses filtros.</p>";
+                }
             });
-
-            if(grid.innerHTML === "") {
-                grid.innerHTML = "<p style='text-align:center; width:100%; color:#666;'>Nenhum animal encontrado com esses filtros.</p>";
-            }
         }
-        renderizar();
+        
+        // Chamada inicial
+        window.onload = renderizar;
     </script>
 
     <footer>
         <div class="wave-top"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path></svg></div>
-        
         <div class="footer-container">
             <div class="footer-section">
                 <h3>Entre em contato</h3>
-                <div class="contact-item">
-                    <i class="fab fa-instagram"></i> adocaorio
-                </div>
-                <div class="contact-item">
-                    <i class="fas fa-envelope"></i> adocaorio@gmail.com
-                </div>
+                <div class="contact-item"><i class="fab fa-instagram"></i> adocaorio</div>
+                <div class="contact-item"><i class="fas fa-envelope"></i> adocaorio@gmail.com</div>
             </div>
-
             <div class="footer-section">
                 <h3>Como ajudar</h3>
                 <p>Doe para arcarmos com os cuidados dos abrigados!</p>
@@ -115,6 +105,5 @@
             </div>
         </div>
     </footer>
-
 </body>
 </html>
