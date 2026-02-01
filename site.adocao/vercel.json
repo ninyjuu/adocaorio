@@ -2,6 +2,7 @@
     "cleanUrls": true,
     "rewrites": [
       { "source": "/admin", "destination": "/admin.html" },
-      { "source": "/adocao", "destination": "/adocao.html" }
+      { "source": "/adocao", "destination": "/adocao.html" },
+      { "source": "/detalhes", "destination": "/detalhes.html" }
     ]
   }
