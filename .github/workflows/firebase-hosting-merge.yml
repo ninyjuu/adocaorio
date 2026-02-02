@@ -17,3 +17,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ADOCAORIO_82AF5 }}
           channelId: live
           projectId: adocaorio-82af5
+          entryPoint: site.adocao
