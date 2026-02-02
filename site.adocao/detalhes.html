@@ -13,91 +13,88 @@
     <script src="script.js"></script>
 
     <style>
-        <style>
-        /* CSS BLINDADO PARA FOTOS (Tamanho Fixo) */
+        /* --- CSS FINAL: CARTÃO ÚNICO FLEXÍVEL (SEM SCROLL) --- */
+
         .detail-wrapper {
             display: flex !important;
             flex-direction: row !important;
-            align-items: flex-start !important;
+            align-items: flex-start !important; /* Permite alturas diferentes */
             gap: 40px !important;
-            background: white;
+            max-width: 1200px;
+            margin: 0 auto;
+            
+            /* Cartão Branco Único que cresce com o conteúdo */
+            background: white; 
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            max-width: 1200px;
-            margin: 0 auto;
+            /* Sem altura fixa, ele vai esticar conforme o texto */
+            height: auto; 
         }
 
+        /* LADO ESQUERDO - FOTO (Altura Fixa para manter padrão) */
         .detail-img-container {
             flex: 1 !important;
             width: 50%;
-            /* ALTURA FIXA: O segredo para a página não pular */
-            height: 500px !important; 
+            height: 500px !important; /* Foto mantém padrão */
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            /* Fundo branco igual ao do card para ficar "invisível" */
-            background: white; 
+            background: #f9f9f9;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #f0f0f0; /* Borda bem suave opcional */
+            border: 1px solid #eee; 
+            /* Se o texto for pequeno, a foto não encolhe */
+            flex-shrink: 0; 
         }
 
         .slide {
-            /* A foto nunca vai passar dos limites do quadrado de 500px */
             width: auto;
             height: auto;
             max-width: 100%;
             max-height: 100%; 
-            object-fit: contain !important; 
+            object-fit: contain !important;
             display: none;
         }
+        .slide.active { display: block; }
 
-        .slide.active {
-            display: block;
-        }
-
-        /* Setas de navegação */
+        /* Setas */
         .slide-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10;
-            background: rgba(59, 30, 122, 0.5);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+            background: rgba(59, 30, 122, 0.5); color: white; border: none;
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
         }
         .slide-nav-btn:hover { background: rgba(59, 30, 122, 0.9); }
-        .prev { left: 10px; }
-        .next { right: 10px; }
+        .prev { left: 10px; } .next { right: 10px; }
 
+        /* LADO DIREITO - CONTEÚDO (Livre para crescer) */
         .detail-content {
             flex: 1 !important;
             width: 50%;
             display: flex;
             flex-direction: column;
             text-align: left;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            /* Altura automática: SEM BARRA DE ROLAGEM */
+            height: auto !important; 
+            overflow: visible !important;
         }
 
-        /* Celular */
+        /* CELULAR */
         @media (max-width: 900px) {
             .detail-wrapper {
                 flex-direction: column !important;
                 padding: 20px;
+                gap: 20px !important;
             }
             .detail-img-container, .detail-content {
                 width: 100% !important;
             }
-            .detail-img-container { height: 350px !important; } /* Altura fixa menor pro celular */
+            .detail-img-container { height: 350px !important; }
         }
     </style>
 </head>
@@ -125,41 +122,23 @@
         document.addEventListener("DOMContentLoaded", () => {
             const idBicho = pegarParametroUrl('id');
             if (!idBicho) return;
-
             buscarAnimais((animais) => {
                 const animal = animais.find(a => a.idFirebase == idBicho);
                 if (animal) renderizar(animal);
             });
         });
 
-        function capitalize(s) {
-            return s && s[0].toUpperCase() + s.slice(1);
-        }
+        function capitalize(s) { return s && s[0].toUpperCase() + s.slice(1); }
 
         function renderizar(animal) {
             const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
             const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
             const faseFormatada = capitalize(animal.fase);
+            const subtitulo = [animal.sexo === 'femea' ? 'Fêmea' : 'Macho', animal.porte + ' Porte', faseFormatada].filter(Boolean).join(" | ");
 
-            const subtitulo = [
-                animal.sexo === 'femea' ? 'Fêmea' : 'Macho', 
-                animal.porte + ' Porte', 
-                faseFormatada
-            ].filter(Boolean).join(" | ");
-
-            // Se não tiver fotos, usa placeholder para não bugar
-            const listaFotos = (animal.fotos && animal.fotos.length > 0) 
-                ? animal.fotos 
-                : ['https://via.placeholder.com/600x400?text=Sem+Foto'];
-
-            let slides = listaFotos.map((f, i) => 
-                `<img src="${f}" class="slide ${i===0?'active':''}" alt="${animal.nome}">`
-            ).join('');
-
-            let setas = listaFotos.length > 1 ? `
-                <button class="slide-nav-btn prev" onclick="mudarSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-                <button class="slide-nav-btn next" onclick="mudarSlide(1)"><i class="fas fa-chevron-right"></i></button>
-            ` : '';
+            const listaFotos = (animal.fotos && animal.fotos.length > 0) ? animal.fotos : ['https://via.placeholder.com/600x400?text=Sem+Foto'];
+            let slides = listaFotos.map((f, i) => `<img src="${f}" class="slide ${i===0?'active':''}" alt="${animal.nome}">`).join('');
+            let setas = listaFotos.length > 1 ? `<button class="slide-nav-btn prev" onclick="mudarSlide(-1)"><i class="fas fa-chevron-left"></i></button><button class="slide-nav-btn next" onclick="mudarSlide(1)"><i class="fas fa-chevron-right"></i></button>` : '';
 
             document.getElementById('conteudo-detalhe').innerHTML = `
                 <div class="detail-img-container">
@@ -167,23 +146,21 @@
                     ${slides}
                 </div>
                 <div class="detail-content">
-                    <h2 style="font-size: 3.5rem; color: var(--primary-dark); margin:0;">
-                        ${animal.nome} <i class="fas fa-${iconClass} sex-icon-detail" style="color: ${iconColor}; font-size: 1.3rem;"></i>
+                    <h2 style="font-size: 3.5rem; color: var(--primary-dark); margin:0; line-height: 1.2; display: flex; align-items: center; gap: 15px;">
+                        ${animal.nome} <i class="fas fa-${iconClass}" style="color: ${iconColor}; font-size: 2.5rem;"></i>
                     </h2>
                     <div style="font-weight:700; color:var(--primary-dark); margin: 10px 0 20px 0; font-size: 1.2rem;">
                         ${subtitulo}
                     </div>
                     <div style="font-size: 1.1rem; line-height: 1.6; color: #444; flex-grow: 1;">
-                        <p><strong>Idade:</strong> ${calcularIdade(animal.nasc)}</p>
-                        ${animal.caracteristicas ? `<p><strong>Características:</strong> ${animal.caracteristicas}</p>` : ''}
-                        ${animal.historia ? `<p><strong>História:</strong> ${animal.historia}</p>` : ''}
-                        ${animal.adaptacao ? `<p><strong>Adaptação:</strong> ${animal.adaptacao}</p>` : ''}
+                        <p style="margin-bottom: 10px;"><strong>Idade:</strong> ${calcularIdade(animal.nasc)}</p>
+                        ${animal.caracteristicas ? `<p style="margin-bottom: 10px;"><strong>Características:</strong> ${animal.caracteristicas}</p>` : ''}
+                        ${animal.historia ? `<p style="margin-bottom: 10px;"><strong>História:</strong> ${animal.historia}</p>` : ''}
+                        ${animal.adaptacao ? `<p style="margin-bottom: 10px;"><strong>Adaptação:</strong> ${animal.adaptacao}</p>` : ''}
                     </div>
 
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLScTHLwKREyuSfOQt47-NwpBidDZ_cCaHgBuq_qxMx7W_UJ89A/viewform" 
-                    target="_blank" 
-                    class="btn-cta" 
-                    style="margin-top:30px; text-decoration:none; text-align:center; display: flex; justify-content: center;">
+                    target="_blank" class="btn-cta" style="margin-top:20px; text-decoration:none; text-align:center; display: flex; justify-content: center; width: 100%;">
                         Adote ${animal.nome}
                     </a>
                 </div>
@@ -199,7 +176,7 @@
             s[slideIndex].classList.add("active");
         }
     </script>
-
+    
     <footer>
         <div class="wave-top"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path></svg></div>
         <div class="footer-container">

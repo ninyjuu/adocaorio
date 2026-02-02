@@ -90,8 +90,19 @@
             div.className = 'foto-item';
             const input = document.createElement('input');
             input.type = 'file'; input.className = 'filter-select'; input.accept = 'image/*'; input.style.flex = '1';
-            if(isPrincipal) { input.id = 'foto-principal'; div.innerHTML = '<strong>Capa:</strong> '; div.appendChild(input); }
-            else { div.appendChild(input); const btn = document.createElement('button'); btn.className = 'btn-remove-foto'; btn.innerHTML = '<i class="fas fa-times"></i>'; btn.onclick = function(){div.remove()}; div.appendChild(btn); }
+            
+            if(isPrincipal) { 
+                input.id = 'foto-principal'; 
+                div.innerHTML = '<strong>Nova Foto:</strong> '; 
+                div.appendChild(input); 
+            } else { 
+                div.appendChild(input); 
+                const btn = document.createElement('button'); 
+                btn.className = 'btn-remove-foto'; 
+                btn.innerHTML = '<i class="fas fa-times"></i>'; 
+                btn.onclick = function(){div.remove()}; 
+                div.appendChild(btn); 
+            }
             container.appendChild(div);
         }
 
@@ -99,18 +110,23 @@
             const idEdicao = document.getElementById('edit-id').value;
             const nome = document.getElementById('nome').value;
             const nasc = document.getElementById('dataNascimento').value;
+
             if(!nome || !nasc) { alert("Preencha Nome e Data!"); return; }
+
             const inputs = document.querySelectorAll('#container-fotos input[type="file"]');
             const fotosPromessas = Array.from(inputs).map(i => i.files[0] ? lerArquivo(i.files[0]) : null);
             const novasFotos = (await Promise.all(fotosPromessas)).filter(f => f !== null);
+
             let fotosParaSalvar;
             if (idEdicao) {
                 const animalExistente = animaisCache.find(a => a.idFirebase == idEdicao);
+                // Lógica: Se o usuário subiu fotos novas, usa as novas. Se não, mantém as antigas.
                 fotosParaSalvar = novasFotos.length > 0 ? novasFotos : animalExistente.fotos;
             } else {
                 if(novasFotos.length === 0) { alert("Anexe ao menos a capa!"); return; }
                 fotosParaSalvar = novasFotos;
             }
+
             const animalData = {
                 nome,
                 tipo: document.getElementById('tipo').value,
@@ -123,11 +139,14 @@
                 adaptacao: document.getElementById('adaptacao').value,
                 fotos: fotosParaSalvar
             };
+
             if(idEdicao) animalData.idFirebase = idEdicao;
-            salvarAnimalNoBanco(animalData).then(() => { resetarFormulario(); });
+
+            salvarAnimalNoBanco(animalData).then(() => {
+                resetarFormulario();
+            });
         }
 
-        // FUNÇÃO CORRIGIDA PARA EXIBIR "CACHORRO" E NÃO SUMIR OS DADOS
         function carregarListaAdmin() {
             buscarAnimais((lista) => {
                 animaisCache = lista;
@@ -138,11 +157,9 @@
                 lista.forEach(a => {
                     const foto = (a.fotos && a.fotos[0]) ? a.fotos[0] : 'https://via.placeholder.com/50';
                     
-                    // Lógica para transformar "cao" em "Cachorro" na visualização
                     let exibirEspecie = a.tipo;
                     if(a.tipo === 'cao') exibirEspecie = 'Cachorro';
                     else if(a.tipo === 'gato') exibirEspecie = 'Gato';
-                    // Se for a primeira letra maiúscula (ex: Cachorro), capitalize apenas se necessário
                     exibirEspecie = exibirEspecie.charAt(0).toUpperCase() + exibirEspecie.slice(1);
 
                     tb.innerHTML += `<tr>
@@ -158,6 +175,7 @@
             });
         }
 
+        // FUNÇÃO ATUALIZADA PARA MOSTRAR FOTOS ATUAIS
         function prepararEdicao(idFirebase) {
             const a = animaisCache.find(x => x.idFirebase == idFirebase);
             if(a) {
@@ -166,6 +184,7 @@
                 document.getElementById('btn-salvar').innerText = "ATUALIZAR";
                 document.getElementById('btn-cancelar').style.display = "inline-block";
                 document.getElementById('edit-id').value = a.idFirebase;
+                
                 document.getElementById('nome').value = a.nome;
                 document.getElementById('tipo').value = a.tipo;
                 document.getElementById('sexo').value = a.sexo;
@@ -175,7 +194,31 @@
                 document.getElementById('caracteristicas').value = a.caracteristicas || "";
                 document.getElementById('historia').value = a.historia || "";
                 document.getElementById('adaptacao').value = a.adaptacao || "";
-                document.getElementById('container-fotos').innerHTML = "";
+
+                // MOSTRAR FOTOS ATUAIS
+                const container = document.getElementById('container-fotos');
+                container.innerHTML = "<p style='margin-bottom:10px; color:#666;'><strong>Fotos atuais salvas:</strong> (Envie novas abaixo apenas se quiser trocar tudo)</p>";
+                
+                if (a.fotos && a.fotos.length > 0) {
+                    const divFotosAtuais = document.createElement('div');
+                    divFotosAtuais.style.display = 'flex';
+                    divFotosAtuais.style.gap = '10px';
+                    divFotosAtuais.style.marginBottom = '15px';
+                    divFotosAtuais.style.flexWrap = 'wrap';
+
+                    a.fotos.forEach(fotoUrl => {
+                        const img = document.createElement('img');
+                        img.src = fotoUrl;
+                        img.style.width = '60px';
+                        img.style.height = '60px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '5px';
+                        img.style.border = '2px solid #ddd';
+                        divFotosAtuais.appendChild(img);
+                    });
+                    container.appendChild(divFotosAtuais);
+                }
+
                 adicionarCampoFoto(true);
             }
         }
