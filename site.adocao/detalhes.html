@@ -13,30 +13,27 @@
     <script src="script.js"></script>
 
     <style>
-        /* --- CSS FINAL: CARTÃO ÚNICO FLEXÍVEL (SEM SCROLL) --- */
+        /* --- CSS FINAL: MOBILE FIXO E FOTOS SEM CORTES --- */
 
         .detail-wrapper {
             display: flex !important;
             flex-direction: row !important;
-            align-items: flex-start !important; /* Permite alturas diferentes */
+            align-items: flex-start !important;
             gap: 40px !important;
             max-width: 1200px;
             margin: 0 auto;
-            
-            /* Cartão Branco Único que cresce com o conteúdo */
             background: white; 
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            /* Sem altura fixa, ele vai esticar conforme o texto */
             height: auto; 
         }
 
-        /* LADO ESQUERDO - FOTO (Altura Fixa para manter padrão) */
+        /* CONFIGURAÇÃO DA CAIXA DE FOTO (PC) */
         .detail-img-container {
             flex: 1 !important;
             width: 50%;
-            height: 500px !important; /* Foto mantém padrão */
+            height: 500px !important; /* Altura fixa PC */
             position: relative;
             border-radius: 20px;
             overflow: hidden;
@@ -45,16 +42,16 @@
             align-items: center;
             justify-content: center;
             border: 1px solid #eee; 
-            /* Se o texto for pequeno, a foto não encolhe */
             flex-shrink: 0; 
         }
 
+        /* CONFIGURAÇÃO DA IMAGEM */
         .slide {
             width: auto;
             height: auto;
             max-width: 100%;
             max-height: 100%; 
-            object-fit: contain !important;
+            object-fit: contain !important; /* ESSENCIAL: Nunca corta a foto */
             display: none;
         }
         .slide.active { display: block; }
@@ -69,7 +66,7 @@
         .slide-nav-btn:hover { background: rgba(59, 30, 122, 0.9); }
         .prev { left: 10px; } .next { right: 10px; }
 
-        /* LADO DIREITO - CONTEÚDO (Livre para crescer) */
+        /* LADO DIREITO - CONTEÚDO */
         .detail-content {
             flex: 1 !important;
             width: 50%;
@@ -79,22 +76,33 @@
             background: transparent;
             padding: 0;
             box-shadow: none;
-            /* Altura automática: SEM BARRA DE ROLAGEM */
             height: auto !important; 
             overflow: visible !important;
         }
 
-        /* CELULAR */
+        /* --- CORREÇÃO MOBILE AQUI --- */
         @media (max-width: 900px) {
             .detail-wrapper {
                 flex-direction: column !important;
                 padding: 20px;
                 gap: 20px !important;
             }
+            
             .detail-img-container, .detail-content {
                 width: 100% !important;
             }
-            .detail-img-container { height: 350px !important; }
+
+            /* FIXANDO A ALTURA NO CELULAR TAMBÉM */
+            .detail-img-container { 
+                height: 400px !important; /* Altura fixa para celular (quadrado visível) */
+                background: #f9f9f9; /* Garante que se a foto for pequena, o fundo existe */
+            }
+            
+            /* Garante que a foto respeite a altura de 400px do celular */
+            .slide {
+                max-height: 100% !important; 
+                width: auto !important;
+            }
         }
     </style>
 </head>

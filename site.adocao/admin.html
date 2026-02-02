@@ -20,9 +20,20 @@
         .btn-action { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; margin-right: 5px; }
         .btn-delete { background-color: #ff4d4d; } .btn-edit { background-color: #ffa500; }
         .section-title-admin { color: var(--primary-dark); margin-top: 50px; border-bottom: 2px solid var(--lilac-bg); padding-bottom: 10px; }
+        
         .foto-item { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .btn-add-foto { background: var(--primary-light); color: white; border: none; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; margin-top: 10px; }
-        .btn-remove-foto { background: #ff4d4d; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+        .btn-remove-foto { background: #ff4d4d; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+
+        /* Estilo para as miniaturas de fotos antigas */
+        .old-photo-wrapper { position: relative; display: inline-block; margin-right: 10px; margin-bottom: 10px; }
+        .old-photo-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd; }
+        .btn-delete-old {
+            position: absolute; top: -5px; right: -5px;
+            background: red; color: white; border: none;
+            border-radius: 50%; width: 20px; height: 20px;
+            font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -37,7 +48,9 @@
         <h2 class="section-title-admin" id="titulo-form">Cadastrar Novo Animal</h2>
         <div class="filter-wrapper">
             <input type="hidden" id="edit-id" value="">
+            
             <div class="form-group"><label>Nome:</label><input type="text" id="nome" class="filter-select" style="width:100%"></div>
+            
             <div class="filter-container" style="margin: 20px 0;">
                 <div class="filter-group"><label>Espécie:</label>
                     <select id="tipo" class="filter-select">
@@ -49,12 +62,17 @@
                 <div class="filter-group"><label>Porte:</label><select id="porte" class="filter-select"><option value="Pequeno">Pequeno</option><option value="Médio">Médio</option><option value="Grande">Grande</option></select></div>
                 <div class="filter-group"><label>Fase:</label><select id="fase" class="filter-select"><option value="filhote">Filhote</option><option value="adulto">Adulto</option><option value="idoso">Idoso</option></select></div>
             </div>
+            
             <div class="form-group"><label>Data de Nascimento:</label><input type="date" id="dataNascimento" class="filter-select" style="width:100%"></div>
             
             <div style="background: #f0f0f0; padding: 15px; border-radius: 10px; margin-top: 20px;">
-                <h4 style="color: var(--primary-dark); margin-bottom: 10px;">Fotos do Animal</h4>
+                <h4 style="color: var(--primary-dark); margin-bottom: 10px;">Gerenciar Fotos</h4>
+                
+                <div id="fotos-antigas-container" style="margin-bottom: 15px;"></div>
+                
                 <div id="container-fotos"></div>
-                <button onclick="adicionarCampoFoto()" class="btn-add-foto"><i class="fas fa-plus"></i> Adicionar outra foto</button>
+                <button onclick="adicionarCampoFoto()" class="btn-add-foto"><i class="fas fa-plus"></i> Adicionar nova foto</button>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">* A primeira foto da lista (da esquerda para direita) será a Capa.</p>
             </div>
 
             <div class="form-group" style="margin-top: 20px;"><label>Características:</label><input type="text" id="caracteristicas" class="filter-select" style="width:100%"></div>
@@ -78,6 +96,7 @@
 
     <script>
         let animaisCache = [];
+        let fotosParaManter = []; // Lista temporária das fotos antigas que não foram deletadas
 
         document.addEventListener("DOMContentLoaded", () => { 
             carregarListaAdmin(); 
@@ -88,21 +107,24 @@
             const container = document.getElementById('container-fotos');
             const div = document.createElement('div');
             div.className = 'foto-item';
-            const input = document.createElement('input');
-            input.type = 'file'; input.className = 'filter-select'; input.accept = 'image/*'; input.style.flex = '1';
             
-            if(isPrincipal) { 
-                input.id = 'foto-principal'; 
-                div.innerHTML = '<strong>Nova Foto:</strong> '; 
-                div.appendChild(input); 
-            } else { 
-                div.appendChild(input); 
-                const btn = document.createElement('button'); 
-                btn.className = 'btn-remove-foto'; 
-                btn.innerHTML = '<i class="fas fa-times"></i>'; 
-                btn.onclick = function(){div.remove()}; 
-                div.appendChild(btn); 
+            const input = document.createElement('input');
+            input.type = 'file'; 
+            input.className = 'filter-select'; 
+            input.accept = 'image/*'; 
+            input.style.flex = '1';
+            
+            div.appendChild(input); 
+
+            // Se não for o primeiro campo "vazio" ao carregar a página, adiciona botão de remover
+            if (!isPrincipal) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-remove-foto';
+                btn.innerHTML = '<i class="fas fa-times"></i>';
+                btn.onclick = function(){ div.remove() };
+                div.appendChild(btn);
             }
+            
             container.appendChild(div);
         }
 
@@ -113,18 +135,19 @@
 
             if(!nome || !nasc) { alert("Preencha Nome e Data!"); return; }
 
+            // 1. Pegar novas fotos enviadas agora
             const inputs = document.querySelectorAll('#container-fotos input[type="file"]');
             const fotosPromessas = Array.from(inputs).map(i => i.files[0] ? lerArquivo(i.files[0]) : null);
-            const novasFotos = (await Promise.all(fotosPromessas)).filter(f => f !== null);
+            const novasFotosBase64 = (await Promise.all(fotosPromessas)).filter(f => f !== null);
 
-            let fotosParaSalvar;
-            if (idEdicao) {
-                const animalExistente = animaisCache.find(a => a.idFirebase == idEdicao);
-                // Lógica: Se o usuário subiu fotos novas, usa as novas. Se não, mantém as antigas.
-                fotosParaSalvar = novasFotos.length > 0 ? novasFotos : animalExistente.fotos;
-            } else {
-                if(novasFotos.length === 0) { alert("Anexe ao menos a capa!"); return; }
-                fotosParaSalvar = novasFotos;
+            // 2. Juntar fotos antigas (que não foram excluídas) + novas fotos
+            // A ordem será: Antigas mantidas primeiro, depois as Novas.
+            // A primeira da lista final será a capa.
+            let listaFinalFotos = [...fotosParaManter, ...novasFotosBase64];
+
+            if (listaFinalFotos.length === 0) {
+                alert("O animal precisa ter pelo menos uma foto!");
+                return;
             }
 
             const animalData = {
@@ -137,7 +160,7 @@
                 caracteristicas: document.getElementById('caracteristicas').value,
                 historia: document.getElementById('historia').value,
                 adaptacao: document.getElementById('adaptacao').value,
-                fotos: fotosParaSalvar
+                fotos: listaFinalFotos
             };
 
             if(idEdicao) animalData.idFirebase = idEdicao;
@@ -175,7 +198,6 @@
             });
         }
 
-        // FUNÇÃO ATUALIZADA PARA MOSTRAR FOTOS ATUAIS
         function prepararEdicao(idFirebase) {
             const a = animaisCache.find(x => x.idFirebase == idFirebase);
             if(a) {
@@ -195,35 +217,65 @@
                 document.getElementById('historia').value = a.historia || "";
                 document.getElementById('adaptacao').value = a.adaptacao || "";
 
-                // MOSTRAR FOTOS ATUAIS
-                const container = document.getElementById('container-fotos');
-                container.innerHTML = "<p style='margin-bottom:10px; color:#666;'><strong>Fotos atuais salvas:</strong> (Envie novas abaixo apenas se quiser trocar tudo)</p>";
+                // --- LÓGICA DE FOTOS INTELIGENTE ---
                 
-                if (a.fotos && a.fotos.length > 0) {
-                    const divFotosAtuais = document.createElement('div');
-                    divFotosAtuais.style.display = 'flex';
-                    divFotosAtuais.style.gap = '10px';
-                    divFotosAtuais.style.marginBottom = '15px';
-                    divFotosAtuais.style.flexWrap = 'wrap';
+                // 1. Salva as fotos atuais numa variável global para manipular
+                fotosParaManter = a.fotos || [];
+                
+                // 2. Renderiza as miniaturas com botão de excluir (X)
+                renderizarFotosAntigas();
 
-                    a.fotos.forEach(fotoUrl => {
-                        const img = document.createElement('img');
-                        img.src = fotoUrl;
-                        img.style.width = '60px';
-                        img.style.height = '60px';
-                        img.style.objectFit = 'cover';
-                        img.style.borderRadius = '5px';
-                        img.style.border = '2px solid #ddd';
-                        divFotosAtuais.appendChild(img);
-                    });
-                    container.appendChild(divFotosAtuais);
-                }
-
-                adicionarCampoFoto(true);
+                // 3. Limpa o campo de adicionar nova
+                document.getElementById('container-fotos').innerHTML = "";
+                // Não adiciona campo vazio automático na edição pra não poluir, só se o usuário clicar no botão
             }
         }
 
+        function renderizarFotosAntigas() {
+            const containerAntigas = document.getElementById('fotos-antigas-container');
+            containerAntigas.innerHTML = ""; // Limpa visualmente
+
+            if(fotosParaManter.length > 0) {
+                const label = document.createElement('p');
+                label.style.fontSize = '0.9rem'; 
+                label.style.fontWeight = 'bold'; 
+                label.style.marginBottom = '5px';
+                label.innerText = 'Fotos atuais (Clique no X para remover):';
+                containerAntigas.appendChild(label);
+
+                fotosParaManter.forEach((fotoUrl, index) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'old-photo-wrapper';
+                    
+                    const img = document.createElement('img');
+                    img.src = fotoUrl;
+                    img.className = 'old-photo-thumb';
+                    
+                    const btnX = document.createElement('button');
+                    btnX.className = 'btn-delete-old';
+                    btnX.innerHTML = '<i class="fas fa-times"></i>';
+                    btnX.onclick = function(e) {
+                        e.preventDefault(); // Evita recarregar página
+                        removerFotoAntiga(index);
+                    };
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(btnX);
+                    containerAntigas.appendChild(wrapper);
+                });
+            }
+        }
+
+        function removerFotoAntiga(index) {
+            // Remove da lista em memória
+            fotosParaManter.splice(index, 1);
+            // Renderiza de novo para atualizar a tela
+            renderizarFotosAntigas();
+        }
+
         function resetarFormulario() {
+            fotosParaManter = []; // Limpa cache de fotos
+            document.getElementById('fotos-antigas-container').innerHTML = "";
             document.getElementById('edit-id').value = "";
             document.getElementById('titulo-form').innerText = "Cadastrar Novo Animal";
             document.getElementById('btn-salvar').innerText = "SALVAR ANIMAL";
@@ -234,7 +286,7 @@
             document.getElementById('historia').value = "";
             document.getElementById('adaptacao').value = "";
             document.getElementById('container-fotos').innerHTML = "";
-            adicionarCampoFoto(true);
+            adicionarCampoFoto(true); // Adiciona um campo limpo para novo cadastro
         }
     </script>
 </body>
