@@ -13,7 +13,7 @@
     <script src="script.js"></script>
 
     <style>
-                /* Dentro da tag <style> do detalhes.html */
+        /* CSS ESPECIAL PARA DETALHES (FOTOS INTEIRAS) */
         .detail-wrapper {
             display: flex !important;
             flex-direction: row !important;
@@ -30,30 +30,63 @@
         .detail-img-container {
             flex: 1 !important;
             width: 50%;
-            height: auto !important; /* A altura se adapta à foto */
-            min-height: 400px;
+            /* min-height segura o espaço para a foto não "sumir" */
+            min-height: 400px; 
+            height: auto !important; 
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            background: #f9f9f9;
+            background: #f4f4f4; /* Fundo cinza para destacar a foto */
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1px solid #eee;
         }
 
         .slide {
+            /* Garante que a foto não estoure nem fique minúscula */
             width: 100%;
             height: auto;
-            max-height: 75vh; /* Limita a altura para fotos verticais */
-            object-fit: contain !important; /* Mostra a foto inteira sem corte quadrado */
+            max-height: 600px; 
+            object-fit: contain !important; /* MÁGICA: Mostra a foto inteira */
             display: none;
-            border-radius: 15px;
         }
 
         .slide.active {
             display: block;
         }
 
+        /* Setas de navegação */
+        .slide-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: rgba(59, 30, 122, 0.5);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slide-nav-btn:hover { background: rgba(59, 30, 122, 0.9); }
+        .prev { left: 10px; }
+        .next { right: 10px; }
+
+        .detail-content {
+            flex: 1 !important;
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        /* Celular */
         @media (max-width: 900px) {
             .detail-wrapper {
                 flex-direction: column !important;
@@ -62,6 +95,7 @@
             .detail-img-container, .detail-content {
                 width: 100% !important;
             }
+            .detail-img-container { min-height: 300px; }
         }
     </style>
 </head>
@@ -96,7 +130,6 @@
             });
         });
 
-        // Função auxiliar para capitalizar a primeira letra
         function capitalize(s) {
             return s && s[0].toUpperCase() + s.slice(1);
         }
@@ -104,8 +137,6 @@
         function renderizar(animal) {
             const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
             const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
-            
-            // CORREÇÃO: Capitalizar a fase (adulto -> Adulto)
             const faseFormatada = capitalize(animal.fase);
 
             const subtitulo = [
@@ -114,13 +145,18 @@
                 faseFormatada
             ].filter(Boolean).join(" | ");
 
-            let slides = animal.fotos.map((f, i) => 
-                `<img src="${f}" class="slide ${i===0?'active':''}">`
+            // Se não tiver fotos, usa placeholder para não bugar
+            const listaFotos = (animal.fotos && animal.fotos.length > 0) 
+                ? animal.fotos 
+                : ['https://via.placeholder.com/600x400?text=Sem+Foto'];
+
+            let slides = listaFotos.map((f, i) => 
+                `<img src="${f}" class="slide ${i===0?'active':''}" alt="${animal.nome}">`
             ).join('');
 
-            let setas = animal.fotos.length > 1 ? `
-                <button class="slide-nav-btn prev" onclick="mudarSlide(-1)" style="position:absolute;left:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
-                <button class="slide-nav-btn next" onclick="mudarSlide(1)" style="position:absolute;right:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+            let setas = listaFotos.length > 1 ? `
+                <button class="slide-nav-btn prev" onclick="mudarSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="slide-nav-btn next" onclick="mudarSlide(1)"><i class="fas fa-chevron-right"></i></button>
             ` : '';
 
             document.getElementById('conteudo-detalhe').innerHTML = `
@@ -130,7 +166,7 @@
                 </div>
                 <div class="detail-content">
                     <h2 style="font-size: 3.5rem; color: var(--primary-dark); margin:0;">
-                        ${animal.nome} <i class="fas fa-${iconClass}" style="color: ${iconColor};"></i>
+                        ${animal.nome} <i class="fas fa-${iconClass} sex-icon-detail" style="color: ${iconColor}; font-size: 1.3rem;"></i>
                     </h2>
                     <div style="font-weight:700; color:var(--primary-dark); margin: 10px 0 20px 0; font-size: 1.2rem;">
                         ${subtitulo}
