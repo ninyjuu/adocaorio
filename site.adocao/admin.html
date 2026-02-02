@@ -39,7 +39,12 @@
             <input type="hidden" id="edit-id" value="">
             <div class="form-group"><label>Nome:</label><input type="text" id="nome" class="filter-select" style="width:100%"></div>
             <div class="filter-container" style="margin: 20px 0;">
-                <div class="filter-group"><label>Espécie:</label><select id="tipo" class="filter-select"><option value="cao">Cachorro</option><option value="gato">Gato</option></select></div>
+                <div class="filter-group"><label>Espécie:</label>
+                    <select id="tipo" class="filter-select">
+                        <option value="cao">Cachorro</option>
+                        <option value="gato">Gato</option>
+                    </select>
+                </div>
                 <div class="filter-group"><label>Sexo:</label><select id="sexo" class="filter-select"><option value="femea">Fêmea</option><option value="macho">Macho</option></select></div>
                 <div class="filter-group"><label>Porte:</label><select id="porte" class="filter-select"><option value="Pequeno">Pequeno</option><option value="Médio">Médio</option><option value="Grande">Grande</option></select></div>
                 <div class="filter-group"><label>Fase:</label><select id="fase" class="filter-select"><option value="filhote">Filhote</option><option value="adulto">Adulto</option><option value="idoso">Idoso</option></select></div>
@@ -94,13 +99,10 @@
             const idEdicao = document.getElementById('edit-id').value;
             const nome = document.getElementById('nome').value;
             const nasc = document.getElementById('dataNascimento').value;
-
             if(!nome || !nasc) { alert("Preencha Nome e Data!"); return; }
-
             const inputs = document.querySelectorAll('#container-fotos input[type="file"]');
             const fotosPromessas = Array.from(inputs).map(i => i.files[0] ? lerArquivo(i.files[0]) : null);
             const novasFotos = (await Promise.all(fotosPromessas)).filter(f => f !== null);
-
             let fotosParaSalvar;
             if (idEdicao) {
                 const animalExistente = animaisCache.find(a => a.idFirebase == idEdicao);
@@ -109,7 +111,6 @@
                 if(novasFotos.length === 0) { alert("Anexe ao menos a capa!"); return; }
                 fotosParaSalvar = novasFotos;
             }
-
             const animalData = {
                 nome,
                 tipo: document.getElementById('tipo').value,
@@ -122,47 +123,39 @@
                 adaptacao: document.getElementById('adaptacao').value,
                 fotos: fotosParaSalvar
             };
-
             if(idEdicao) animalData.idFirebase = idEdicao;
-
-            salvarAnimalNoBanco(animalData).then(() => {
-                resetarFormulario();
-            });
+            salvarAnimalNoBanco(animalData).then(() => { resetarFormulario(); });
         }
 
+        // FUNÇÃO CORRIGIDA PARA EXIBIR "CACHORRO" E NÃO SUMIR OS DADOS
         function carregarListaAdmin() {
-            function carregarListaAdmin() {
-                buscarAnimais((lista) => {
-                    animaisCache = lista;
-                    const tb = document.getElementById('lista-admin');
-                    tb.innerHTML = "";
+            buscarAnimais((lista) => {
+                animaisCache = lista;
+                const tb = document.getElementById('lista-admin');
+                tb.innerHTML = "";
+                if(lista.length === 0) { tb.innerHTML = "<tr><td colspan='4'>Vazio.</td></tr>"; return; }
+                
+                lista.forEach(a => {
+                    const foto = (a.fotos && a.fotos[0]) ? a.fotos[0] : 'https://via.placeholder.com/50';
                     
-                    if(lista.length === 0) { 
-                        tb.innerHTML = "<tr><td colspan='4'>Vazio.</td></tr>"; 
-                        return; 
-                    }
+                    // Lógica para transformar "cao" em "Cachorro" na visualização
+                    let exibirEspecie = a.tipo;
+                    if(a.tipo === 'cao') exibirEspecie = 'Cachorro';
+                    else if(a.tipo === 'gato') exibirEspecie = 'Gato';
+                    // Se for a primeira letra maiúscula (ex: Cachorro), capitalize apenas se necessário
+                    exibirEspecie = exibirEspecie.charAt(0).toUpperCase() + exibirEspecie.slice(1);
 
-                    lista.forEach(a => {
-                        const foto = (a.fotos && a.fotos[0]) ? a.fotos[0] : 'https://via.placeholder.com/50';
-                        
-                        // ESSA LINHA RESOLVE O SUMIÇO: Ela aceita "cao" ou "Cachorro"
-                        const tipoOriginal = a.tipo ? a.tipo.toLowerCase() : "";
-                        const especieFormatada = (tipoOriginal === 'cao' || tipoOriginal === 'cachorro') ? 'Cachorro' : 
-                                            (tipoOriginal === 'gato') ? 'Gato' : a.tipo;
-
-                        tb.innerHTML += `
-                            <tr>
-                                <td><img src="${foto}" class="thumb-admin"></td>
-                                <td><strong>${a.nome}</strong></td>
-                                <td>${especieFormatada}</td>
-                                <td>
-                                    <button class="btn-action btn-edit" onclick="prepararEdicao('${a.idFirebase}')"><i class="fas fa-pen"></i></button>
-                                    <button class="btn-action btn-delete" onclick="deletarAnimalDoBanco('${a.idFirebase}')"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>`;
-                    });
+                    tb.innerHTML += `<tr>
+                        <td><img src="${foto}" class="thumb-admin"></td>
+                        <td><strong>${a.nome}</strong></td>
+                        <td>${exibirEspecie}</td>
+                        <td>
+                            <button class="btn-action btn-edit" onclick="prepararEdicao('${a.idFirebase}')"><i class="fas fa-pen"></i></button>
+                            <button class="btn-action btn-delete" onclick="deletarAnimalDoBanco('${a.idFirebase}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
                 });
-            }
+            });
         }
 
         function prepararEdicao(idFirebase) {
