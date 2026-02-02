@@ -13,7 +13,8 @@
     <script src="script.js"></script>
 
     <style>
-        /* CSS ESPECIAL PARA DETALHES (FOTOS INTEIRAS) */
+        <style>
+        /* CSS BLINDADO PARA FOTOS (Tamanho Fixo) */
         .detail-wrapper {
             display: flex !important;
             flex-direction: row !important;
@@ -30,25 +31,26 @@
         .detail-img-container {
             flex: 1 !important;
             width: 50%;
-            /* min-height segura o espaço para a foto não "sumir" */
-            min-height: 400px; 
-            height: auto !important; 
+            /* ALTURA FIXA: O segredo para a página não pular */
+            height: 500px !important; 
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            background: #f4f4f4; /* Fundo cinza para destacar a foto */
+            /* Fundo branco igual ao do card para ficar "invisível" */
+            background: white; 
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #eee;
+            border: 1px solid #f0f0f0; /* Borda bem suave opcional */
         }
 
         .slide {
-            /* Garante que a foto não estoure nem fique minúscula */
-            width: 100%;
+            /* A foto nunca vai passar dos limites do quadrado de 500px */
+            width: auto;
             height: auto;
-            max-height: 600px; 
-            object-fit: contain !important; /* MÁGICA: Mostra a foto inteira */
+            max-width: 100%;
+            max-height: 100%; 
+            object-fit: contain !important; 
             display: none;
         }
 
@@ -95,7 +97,7 @@
             .detail-img-container, .detail-content {
                 width: 100% !important;
             }
-            .detail-img-container { min-height: 300px; }
+            .detail-img-container { height: 350px !important; } /* Altura fixa menor pro celular */
         }
     </style>
 </head>
