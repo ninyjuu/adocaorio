@@ -7,14 +7,12 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="script.js"></script>
 
     <style>
-        /* --- CSS FINAL: MOBILE FIXO E FOTOS SEM CORTES --- */
-
+        /* CSS CORRIGIDO PARA MOBILE E CARREGAMENTO */
         .detail-wrapper {
             display: flex !important;
             flex-direction: row !important;
@@ -29,7 +27,6 @@
             height: auto; 
         }
 
-        /* CONFIGURAÇÃO DA CAIXA DE FOTO (PC) */
         .detail-img-container {
             flex: 1 !important;
             width: 50%;
@@ -45,28 +42,24 @@
             flex-shrink: 0; 
         }
 
-        /* CONFIGURAÇÃO DA IMAGEM */
         .slide {
             width: auto;
             height: auto;
             max-width: 100%;
             max-height: 100%; 
-            object-fit: contain !important; /* ESSENCIAL: Nunca corta a foto */
+            object-fit: contain !important;
             display: none;
         }
         .slide.active { display: block; }
 
-        /* Setas */
         .slide-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
             background: rgba(59, 30, 122, 0.5); color: white; border: none;
             width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: 0.3s;
             display: flex; align-items: center; justify-content: center;
         }
-        .slide-nav-btn:hover { background: rgba(59, 30, 122, 0.9); }
         .prev { left: 10px; } .next { right: 10px; }
 
-        /* LADO DIREITO - CONTEÚDO */
         .detail-content {
             flex: 1 !important;
             width: 50%;
@@ -80,34 +73,26 @@
             overflow: visible !important;
         }
 
-        /* --- CORREÇÃO MOBILE AQUI --- */
+        /* CELULAR - CORREÇÃO CRÍTICA */
         @media (max-width: 900px) {
             .detail-wrapper {
                 flex-direction: column !important;
                 padding: 20px;
                 gap: 20px !important;
             }
-            
             .detail-img-container, .detail-content {
                 width: 100% !important;
             }
-
-            /* FIXANDO A ALTURA NO CELULAR TAMBÉM */
             .detail-img-container { 
-                height: 400px !important; /* Altura fixa para celular (quadrado visível) */
-                background: #f9f9f9; /* Garante que se a foto for pequena, o fundo existe */
-            }
-            
-            /* Garante que a foto respeite a altura de 400px do celular */
-            .slide {
-                max-height: 100% !important; 
-                width: auto !important;
+                /* Força a caixa a aparecer mesmo se a foto demorar */
+                height: 350px !important; 
+                min-height: 350px;
+                background: #eee;
             }
         }
     </style>
 </head>
 <body>
-
     <nav>
         <a href="index.html" class="logo-container">
             <img src="https://scontent-gig4-1.xx.fbcdn.net/v/t1.15752-9/622023872_1604611677336690_5729541255914831690_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=106&ccb=1-7&_nc_sid=9f807c&_nc_ohc=f-nFPiI96CEQ7kNvwHt24F5&_nc_oc=Adn1RZyIP23YnN4VXoHLyYvAVnkW2AWTX4nPrvSCRnYsrdIKIKpvG4faAfawg5JYkxU&_nc_zt=23&_nc_ht=scontent-gig4-1.xx&oh=03_Q7cD4gHt-WGbGD6-dqGYPUNJ4jZy-rcYUc1-M-QLxOYHYd7BYg&oe=69A45F5D" alt="Logo" class="logo-img">
@@ -115,17 +100,14 @@
         </a>
         <div class="menu-links"><a href="adocao.html">Voltar</a></div>
     </nav>
-
     <div class="container">
         <div class="btn-back-container">
             <a href="adocao.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</a>
         </div>
-
         <div class="detail-wrapper" id="conteudo-detalhe">
             <p style="text-align: center; width: 100%;">Carregando amiguinho...</p>
         </div>
     </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const idBicho = pegarParametroUrl('id');
@@ -166,7 +148,6 @@
                         ${animal.historia ? `<p style="margin-bottom: 10px;"><strong>História:</strong> ${animal.historia}</p>` : ''}
                         ${animal.adaptacao ? `<p style="margin-bottom: 10px;"><strong>Adaptação:</strong> ${animal.adaptacao}</p>` : ''}
                     </div>
-
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLScTHLwKREyuSfOQt47-NwpBidDZ_cCaHgBuq_qxMx7W_UJ89A/viewform" 
                     target="_blank" class="btn-cta" style="margin-top:20px; text-decoration:none; text-align:center; display: flex; justify-content: center; width: 100%;">
                         Adote ${animal.nome}
@@ -184,7 +165,6 @@
             s[slideIndex].classList.add("active");
         }
     </script>
-    
     <footer>
         <div class="wave-top"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path></svg></div>
         <div class="footer-container">
