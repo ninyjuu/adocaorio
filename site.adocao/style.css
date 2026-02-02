@@ -1,9 +1,9 @@
 /* style.css */
 
 /* ==========================================================================
-   1. CONFIGURAÇÕES GERAIS (PC) - PRESERVADO CONFORME ENVIADO
+   1. CONFIGURAÇÕES GERAIS (PC)
    ========================================================================== */
-:root {
+   :root {
     --primary-dark: #3b1e7a;
     --primary-light: #5e35b1;
     --lilac-bg: #7c4dff;
@@ -120,11 +120,6 @@ header h1 { font-size: 4rem; margin-bottom: 20px; color: var(--white); text-shad
 .btn-details { background-color: #2d1b4e; color: white; display: block; width: 100%; padding: 12px 0; text-align: center; border-radius: 8px; font-weight: bold; margin-top: auto; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
 .btn-details:hover { background-color: #4a148c; cursor: pointer; }
 
-/* PAGINAÇÃO PC */
-.pagination { display: flex; justify-content: center; gap: 10px; margin-top: 50px; margin-bottom: 20px; width: 100%; }
-.page-btn { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #fff; border: 2px solid #e3d6ff; color: var(--primary-dark); font-weight: bold; border-radius: 50%; text-decoration: none; transition: 0.3s; cursor: pointer; font-size: 1rem; }
-.page-btn.active, .page-btn:hover { background-color: var(--primary-dark); color: white; border-color: var(--primary-dark); }
-
 /* LAYOUT HISTÓRIA PC */
 .history-main-wrapper { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; }
 .history-top-section { display: flex; justify-content: center; align-items: center; gap: 40px; margin-bottom: 30px; width: 100%; }
@@ -165,7 +160,7 @@ header h1 { font-size: 4rem; margin-bottom: 20px; color: var(--white); text-shad
 .next-btn { right: 0; border-radius: 5px 0 0 5px; }
 
 /* BOTÃO GERAL (CTA) - PC */
-.btn-cta { 
+.btn-cta, #btn-salvar { 
     background-color: var(--primary-dark); 
     color: white !important; 
     padding: 15px 30px; 
@@ -181,7 +176,37 @@ header h1 { font-size: 4rem; margin-bottom: 20px; color: var(--white); text-shad
     text-decoration: none !important;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.btn-cta:hover { transform: scale(1.05); background-color: var(--primary-light); }
+.btn-cta:hover, #btn-salvar:hover { transform: scale(1.05); background-color: var(--primary-light); }
+
+/* ÍCONE SEXO DIMINUÍDO (CORREÇÃO) */
+.sex-icon-detail {
+    font-size: 1.3rem !important; /* Diminuído de 1.6rem */
+    vertical-align: middle;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}
+
+/* BOTÃO VOLTAR ROXO */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--primary-dark);
+    color: white !important;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: 0.3s;
+    margin-bottom: 25px; 
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+.btn-back:hover {
+    background-color: var(--primary-light);
+    transform: scale(1.05);
+}
 
 /* VALORES PC */
 .values-section { display: flex; justify-content: center; gap: 20px; margin-top: 50px; flex-wrap: wrap; }
@@ -208,7 +233,7 @@ footer { background-color: var(--footer-bg); color: white; padding-top: 80px; po
 .pix-box { background: rgba(255,255,255,0.9); color: #333; padding: 10px 20px; border-radius: 8px; display: inline-block; margin-top: 15px; font-family: monospace; font-size: 1rem; font-weight: bold; }
 
 /* ==========================================================================
-   2. REGRAS PARA CELULAR (SÓ NO MOBILE) - ÚNICA PARTE ALTERADA
+   2. REGRAS PARA CELULAR (SÓ NO MOBILE)
    ========================================================================== */
 @media (max-width: 900px) {
     nav { 

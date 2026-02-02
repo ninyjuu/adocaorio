@@ -101,13 +101,22 @@
             });
         });
 
+        // Função auxiliar para capitalizar a primeira letra
+        function capitalize(s) {
+            return s && s[0].toUpperCase() + s.slice(1);
+        }
+
         function renderizar(animal) {
             const iconClass = animal.sexo === 'femea' ? 'venus' : 'mars';
             const iconColor = animal.sexo === 'femea' ? '#ff4081' : '#2979ff';
+            
+            // CORREÇÃO: Capitalizar a fase (adulto -> Adulto)
+            const faseFormatada = capitalize(animal.fase);
+
             const subtitulo = [
                 animal.sexo === 'femea' ? 'Fêmea' : 'Macho', 
                 animal.porte + ' Porte', 
-                animal.fase
+                faseFormatada
             ].filter(Boolean).join(" | ");
 
             let slides = animal.fotos.map((f, i) => 
@@ -118,9 +127,6 @@
                 <button class="slide-nav-btn prev" onclick="mudarSlide(-1)" style="position:absolute;left:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
                 <button class="slide-nav-btn next" onclick="mudarSlide(1)" style="position:absolute;right:10px;top:50%;z-index:10;background:rgba(0,0,0,0.3);color:white;border:none;padding:10px;border-radius:50%;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
             ` : '';
-
-            // Dentro da função renderizar(animal) no seu detalhes.html
-// Substitua a parte do link de adoção por esta estrutura:
 
             document.getElementById('conteudo-detalhe').innerHTML = `
                 <div class="detail-img-container">

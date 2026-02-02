@@ -14,7 +14,7 @@ if (!firebase.apps.length) {
 }
 const database = firebase.database();
 
-// FUNÇÃO DE IDADE CORRIGIDA
+// FUNÇÃO DE IDADE ATUALIZADA (Anos e Meses)
 function calcularIdade(dataNasc) {
     if (!dataNasc) return "Não informada";
     const birth = new Date(dataNasc);
@@ -23,6 +23,7 @@ function calcularIdade(dataNasc) {
     let anos = now.getFullYear() - birth.getFullYear();
     let meses = now.getMonth() - birth.getMonth();
     
+    // Ajuste se o mês atual for anterior ao mês de aniversário
     if (meses < 0 || (meses === 0 && now.getDate() < birth.getDate())) {
         anos--;
         meses += 12;
@@ -31,17 +32,24 @@ function calcularIdade(dataNasc) {
     // Lógica para filhotes (menos de 1 ano)
     if (anos === 0) {
         if (meses === 0) return "Recém-nascido";
-        if (meses >= 6) return "6 meses e meio";
+        // Usuário pediu para NÃO usar "meio ano", então 6 meses fica "6 meses"
         return meses === 1 ? "1 mês" : `${meses} meses`;
     }
 
-    // Lógica de "e meio" (mais de 1 ano)
+    // Configuração dos plurais
     let textoAnos = anos === 1 ? "ano" : "anos";
-    if (meses >= 6) {
+    let textoMeses = meses === 1 ? "mês" : "meses";
+
+    // Lógica para animais com 1 ano ou mais
+    if (meses === 0) {
+        return `${anos} ${textoAnos}`;
+    } else if (meses === 6) {
+        // Exceção pedida: exatamente 6 meses vira "e meio"
         return `${anos} ${textoAnos} e meio`;
+    } else {
+        // Padrão: mostra anos e meses (ex: 1 ano e 8 meses)
+        return `${anos} ${textoAnos} e ${meses} ${textoMeses}`;
     }
-    
-    return `${anos} ${textoAnos}`;
 }
 
 // BUSCA NO BANCO
