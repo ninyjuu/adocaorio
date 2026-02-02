@@ -13,10 +13,10 @@
     <script src="script.js"></script>
 
     <style>
-        /* CSS EXTRA PARA FORÇAR O LAYOUT LADO A LADO */
+                /* Dentro da tag <style> do detalhes.html */
         .detail-wrapper {
             display: flex !important;
-            flex-direction: row !important; /* Força ficar lado a lado */
+            flex-direction: row !important;
             align-items: flex-start !important;
             gap: 40px !important;
             background: white;
@@ -28,35 +28,32 @@
         }
 
         .detail-img-container {
-            flex: 1 !important; /* Ocupa exatamente a metade esquerda */
+            flex: 1 !important;
             width: 50%;
-            height: 500px;
+            height: auto !important; /* A altura se adapta à foto */
+            min-height: 400px;
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            background: #eee;
-        }
-
-        .detail-content {
-            flex: 1 !important; /* Ocupa exatamente a metade direita */
-            width: 50%;
+            background: #f9f9f9;
             display: flex;
-            flex-direction: column;
-            text-align: left;
+            align-items: center;
+            justify-content: center;
         }
 
         .slide {
             width: 100%;
-            height: 100%;
-            object-fit: cover; /* Ajusta a foto sem esticar */
+            height: auto;
+            max-height: 75vh; /* Limita a altura para fotos verticais */
+            object-fit: contain !important; /* Mostra a foto inteira sem corte quadrado */
             display: none;
+            border-radius: 15px;
         }
 
         .slide.active {
             display: block;
         }
 
-        /* Ajuste para celular: volta a ficar um em cima do outro */
         @media (max-width: 900px) {
             .detail-wrapper {
                 flex-direction: column !important;
@@ -64,9 +61,7 @@
             }
             .detail-img-container, .detail-content {
                 width: 100% !important;
-                height: auto;
             }
-            .detail-img-container { height: 350px; }
         }
     </style>
 </head>
